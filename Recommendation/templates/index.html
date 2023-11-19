@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Recommendation App</title>
+    <style>
+        .table-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .table-container table {
+            border-collapse: collapse;
+            width: 48%;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Đặt chiều cao cố định cho hàng trong bảng Recommendations */
+        #recommendationsBody tr {
+            height: 25px;
+        }
+
+        /* Ẩn tràn nội dung của các dòng ở bảng User's Songs */
+        #userSongsBody tr {
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <h1>Music Recommendation App</h1>
+    <p>Select your id:</p>
+    <select id="songSelect"></select>
+    <button onclick="getRecommendations()">Get Recommendations</button>
+
+    <div class="table-container">
+        <!-- Table: User's Songs -->
+        <table>
+            <thead>
+                <tr>
+                    <th>User's Songs</th>
+                </tr>
+            </thead>
+            <tbody id="userSongsBody"></tbody>
+        </table>
+
+        <!-- Table: Recommendations -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Recommendations</th>
+                </tr>
+            </thead>
+            <tbody id="recommendationsBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Read data from csv file and create a dropdown menu
+        fetch('/get_users')
+            .then(response => response.json())
+            .then(data => {
+                var songSelect = document.getElementById("songSelect");
+
+                // Add options for each user
+                data.forEach(user => {
+                    var option = document.createElement("option");
+                    option.value = user;
+                    option.text = user;
+                    songSelect.add(option);
+                });
+            });
+
+        function getRecommendations() {
+            var songSelect = document.getElementById("songSelect");
+            var selectedUser = songSelect.options[songSelect.selectedIndex].value;
+
+            // Call the API to get the user's playlist and recommendations
+            fetch('/get_user_and_recommendations', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: selectedUser
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    var userSongsBody = document.getElementById("userSongsBody");
+                    userSongsBody.innerHTML = "";
+                    data.user_songs.forEach((userSong, index) => {
+                        var row = userSongsBody.insertRow(index);
+                        var cell = row.insertCell(0);
+                        cell.innerHTML = userSong;
+                    });
+
+                    var recommendationsBody = document.getElementById("recommendationsBody");
+                    recommendationsBody.innerHTML = "";
+                    data.recommendations.forEach((recommendation, index) => {
+                        var row = recommendationsBody.insertRow(index);
+                        var cell = row.insertCell(0);
+                        cell.innerHTML = recommendation.join(" - Score: ");
+                    });
+                });
+        }
+    </script>
+</body>
+</html>
